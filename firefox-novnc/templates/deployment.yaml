@@ -36,11 +36,6 @@ spec:
               name: web
             - containerPort: 5900
               name: vnc
-          env:
-            - name: TZ
-              value: "{{ .Values.env.TZ }}"
-            {{- range .Values.env.extra }}
-            {{- end }}
           securityContext:
             allowPrivilegeEscalation: {{ .Values.security.container.allowPrivilegeEscalation }}
             readOnlyRootFilesystem: {{ .Values.security.container.readOnlyRootFilesystem }}
