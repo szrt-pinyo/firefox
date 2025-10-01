@@ -39,15 +39,6 @@ spec:
           env:
             - name: TZ
               value: "{{ .Values.env.TZ }}"
-            - name: VNC_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{- if .Values.vnc.existingSecret -}}
-                        {{ .Values.vnc.existingSecret }}
-                        {{- else -}}
-                        {{ include "firefox-novnc.fullname" . }}-vnc
-                        {{- end }}
-                  key: {{ .Values.vnc.existingSecretKey }}
             {{- range .Values.env.extra }}
             - name: {{ .name }}
               value: {{ .value | quote }}
