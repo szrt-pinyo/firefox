@@ -1,0 +1,7 @@
+
+apiVersion: v2
+name: firefox-novnc
+description: Firefox GUI (noVNC) futtatása Kubernetes/Rancher alatt
+type: application
+version: 0.1.0
+appVersion: "latest"

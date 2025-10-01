@@ -1,0 +1,84 @@
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "firefox-novnc.fullname" . }}
+  labels:
+    {{- include "firefox-novnc.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "firefox-novnc.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "firefox-novnc.name" . }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.image.pullSecrets | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsUser: {{ .Values.security.pod.runAsUser }}
+        runAsGroup: {{ .Values.security.pod.runAsGroup }}
+        fsGroup: {{ .Values.security.pod.fsGroup }}
+        seccompProfile:
+          type: {{ .Values.security.pod.seccompProfile }}
+      containers:
+        - name: firefox
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: 5800
+              name: web
+            - containerPort: 5900
+              name: vnc
+          env:
+            - name: TZ
+              value: "{{ .Values.env.TZ }}"
+            - name: VNC_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{- if .Values.vnc.existingSecret -}}
+                        {{ .Values.vnc.existingSecret }}
+                        {{- else -}}
+                        {{ include "firefox-novnc.fullname" . }}-vnc
+                        {{- end }}
+                  key: {{ .Values.vnc.existingSecretKey }}
+            {{- range .Values.env.extra }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: {{ .Values.security.container.allowPrivilegeEscalation }}
+            readOnlyRootFilesystem: {{ .Values.security.container.readOnlyRootFilesystem }}
+            capabilities:
+              {{- if .Values.security.container.dropAllCapabilities }}
+              drop: ["ALL"]
+              {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            {{- if .Values.devshm.enabled }}
+            - name: devshm
+              mountPath: /dev/shm
+            {{- end }}
+      volumes:
+        - name: config
+          {{- if .Values.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "firefox-novnc.fullname" . }}-config
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- if .Values.devshm.enabled }}
+        - name: devshm
+          emptyDir:
+            medium: Memory
+            sizeLimit: {{ .Values.devshm.sizeLimit }}
+        {{- end }}

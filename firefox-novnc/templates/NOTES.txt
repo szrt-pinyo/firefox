@@ -1,0 +1,16 @@
+
+Elérés (IP-vel):
+  - NodePort esetén: http://<bármely node IP>:{{ .Values.service.nodePort.web }}
+  - VNC (opcionális): vnc://<node IP>:{{ .Values.service.nodePort.vnc }}
+
+Alternatívák:
+  - LoadBalancer: állítsd .Values.service.type=LoadBalancer, majd használd az LB IP-t.
+  - Ingress: ha hostnévvel szeretnéd, kapcsold be .Values.ingress.enabled-et és állíts be hostot.
+
+Gyors teszt (port-forward):
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "firefox-novnc.fullname" . }} 8080:{{ .Values.service.webPort }}
+  -> http://127.0.0.1:8080
+
+VNC jelszó Secret:
+  - Secret neve: {{- if .Values.vnc.existingSecret }} {{ .Values.vnc.existingSecret }} {{- else }} {{ include "firefox-novnc.fullname" . }}-vnc {{- end }}
+  - Kulcs: {{ .Values.vnc.existingSecretKey }}

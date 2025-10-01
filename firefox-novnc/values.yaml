@@ -1,0 +1,82 @@
+
+replicaCount: 1
+
+image:
+  repository: jlesage/firefox
+  tag: latest
+  pullPolicy: IfNotPresent
+  # pullSecrets:
+  #   - my-regcred
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  # IP-alapú eléréshez állíts típust:
+  # - NodePort: http://<node-ip>:<nodePort>
+  # - LoadBalancer: http://<lb-ip>
+  type: NodePort
+  webPort: 80       # Service port a noVNC web UI-hoz (cluster belül)
+  vncPort: 5900     # Opcionális (VNC klienshez)
+  enabledVnc: true
+  nodePort:
+    enabled: true
+    web: 30080      # NodePort (változtatható; 30000-32767)
+    vnc: 30090
+
+ingress:
+  enabled: false    # IP-hez nincs szükség Ingressre
+  className: ""
+  annotations: {}
+  hosts:
+    - host: firefox.example.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    enabled: false
+    secretName: ""
+
+persistence:
+  enabled: true
+  size: 5Gi
+  storageClass: ""       # pl. longhorn / managed-nfs / stb.
+  accessModes:
+    - ReadWriteOnce
+
+devshm:
+  enabled: true
+  sizeLimit: 1Gi         # tab crash/fekete képernyő esetén emeld (1–2Gi)
+
+security:
+  pod:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile: RuntimeDefault
+  container:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false
+    dropAllCapabilities: true
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 2Gi
+
+affinity: {}
+nodeSelector: {}
+tolerations: []
+
+env:
+  TZ: "Europe/Budapest"
+  extra: []   # pl. [{ name: "HTTP_PROXY", value: "http://proxy:3128" }]
+
+vnc:
+  createSecret: true
+  password: "Er0sJelszo!ValtoztasdMeg"  # csak akkor használjuk, ha createSecret: true
+  existingSecret: ""                     # ha már létező Secretet használsz
+  existingSecretKey: "VNC_PASSWORD"
